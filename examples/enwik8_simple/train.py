@@ -9,7 +9,7 @@ import torch
 import torch.optim as optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
-
+import os
 # constants
 
 NUM_BATCHES = int(1e5)
@@ -20,7 +20,7 @@ VALIDATE_EVERY  = 100
 GENERATE_EVERY  = 500
 GENERATE_LENGTH = 512
 SEQ_LEN = 4096
-
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 # helpers
 
 def cycle(loader):
