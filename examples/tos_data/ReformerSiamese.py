@@ -34,22 +34,27 @@ class ReformerWithEmbedding(nn.Module):
 
 
 class SimpleClassifier(nn.Module):
+    '''
+        Simple classifier on top of the reformers
+        '''
     def __init__(self,input_size=1024,emb_dim=100,outpu_size=1):
         super().__init__()
         self.fc1=nn.Linear(input_size,emb_dim)
         self.fc2=nn.Linear(emb_dim,outpu_size)
+        self.sigmoid=nn.Sigmoid()
 
     def forward(self, x1,x2):
+
         x = torch.cat([x1, x2], 1)
         x = F.relu(self.fc1(x))
-        x = torch.sigmoid(self.fc2(x))
-
+        x = self.sigmoid(self.fc2(x))
         return x
 
 
 class ReformerSiamese(nn.Module):
     def __init__(self,emb_dim,num_tokens=20000,max_seq_len=8192,device="cuda"):
         super().__init__()
+        #param
         self.reformer= ReformerWithEmbedding(
                     num_tokens=num_tokens,
                     dim=emb_dim,
@@ -63,26 +68,30 @@ class ReformerSiamese(nn.Module):
                     causal=True,  # auto-regressive or not
                     bucket_size=64,  # average size of qk per bucket, 64 was recommended in paper
                     n_hashes=4,  # 4 is permissible per author, 8 is the best but slower
-                    emb_dim=128,  # embedding factorization for further memory savings
+                    emb_dim=emb_dim,  # embedding factorization for further memory savings
                     ff_chunks=200,  # number of chunks for feedforward layer, make higher if there are memory issues
                     attn_chunks=8,  # process lsh attention in chunks, only way for memory to fit when scaling to 16k tokens
                     num_mem_kv=128,  # persistent learned memory key values, from all-attention paper
                     twin_attention=False,  # both branches of the reversible network will be attention
-                    full_attn_thres=1024,  # use full attention if context length is less than set value
+                    full_attn_thres=1028,  # use full attention if context length is less than set value
                     reverse_thres=1024,
                     # turn off reversibility for 2x speed for sequence lengths shorter or equal to the designated value
                     use_scale_norm=False,  # use scale norm from 'Transformers without tears' paper
                     one_value_head=False,  # use one set of values for all heads from 'One Write-Head Is All You Need'
                     weight_tie=False,  # tie parameters of each layer for no memory per additional depth
                     weight_tie_embedding=True,  # use token embedding for projection of output, some papers report better results
-                    use_full_attn=False
+                    use_full_attn=True
                 ).to(device)
-        self.classifier=SimpleClassifier(input_size=2*emb_dim,emb_dim=emb_dim).to(device)
+
+        self.classifier=SimpleClassifier(input_size=2*30522,emb_dim=emb_dim).to(device)
 
     def forward(self,x1,x2):
+
         embed1= self.reformer(x1)
         embed2 = self.reformer(x2)
-        sum_embeddings1 = torch.sum(embed1, 2)/embed1.size(1)
-        sum_embeddings2 = torch.sum(embed2, 2)/embed2.size(1)
+
+        sum_embeddings1 = torch.sum(embed1, 1)/embed1.size(1)
+        sum_embeddings2 = torch.sum(embed2, 1)/embed2.size(1)
+
         x= self.classifier(sum_embeddings1,sum_embeddings2)
         return x

@@ -128,7 +128,7 @@ def train(train_dataloader,eval_dataloader, model):
 
 
 # set parameters
-os.environ["CUDA_VISIBLE_DEVICES"]="2"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_name = 'reformer'
 model_save_name = 'training_agb_'+model_name+'-'+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -163,69 +163,3 @@ if not os.path.exists(os.path.join(args['output_dir'])):
 logger.info("***** Saving model to %s ***** ", args['output_dir']+"/"+model_save_name)
 torch.save(model.state_dict(), output_model_file)
 
-# criterion=torch.nn.BCELoss()
-# optimizer= torch.optim.Adam(model.parameters(),lr=args['learning_rate'])
-# import time
-#
-# start_time = time.time()
-#
-# epochs = 1
-#
-# max_trn_batch = 800
-# max_tst_batch = 300
-#
-# train_losses = []
-# test_losses = []
-# train_correct = []
-# test_correct = []
-#
-# for i in range(epochs):
-#     trn_corr = 0
-#     tst_corr = 0
-#
-#     # Run the training batches
-#     for b, (X_train1,X_train2, y_train) in enumerate(train_dataloader):
-#         if b == max_trn_batch:
-#             break
-#         b += 1
-#
-#         # Apply the model
-#         y_pred = model(X_train1,X_train2)
-#         loss = criterion(y_pred, y_train)
-#
-#         # Tally the number of correct predictions
-#         predicted = torch.max(y_pred.data, 1)[1]
-#         batch_corr = (predicted == y_train).sum()
-#         trn_corr += batch_corr
-#
-#         # Update parameters
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
-#
-#         # Print interim results
-#         if b % 200 == 0:
-#             print(f'epoch: {i:2}  batch: {b:4} [{10 * b:6}/8000]  loss: {loss.item():10.8f}  \
-# accuracy: {trn_corr.item() * 100 / (10 * b):7.3f}%')
-#
-#         train_losses.append(loss)
-#         train_correct.append(trn_corr)
-#
-#         # Run the testing batches
-#         with torch.no_grad():
-#             for b, (X_test1,X_test2, y_test) in enumerate(dev_dataloader):
-#                 if b == max_tst_batch:
-#                     break
-#
-#                 # Apply the model
-#                 y_val = model(X_test1,X_test2)
-#
-#                 # Tally the number of correct predictions
-#                 predicted = torch.max(y_val.data, 1)[1]
-#                 tst_corr += (predicted == y_test).sum()
-#
-#         loss = criterion(y_val, y_test)
-#         test_losses.append(loss)
-#         test_correct.append(tst_corr)
-#
-# print(f'\nDuration: {time.time() - start_time:.0f} seconds')  # print the time elapsed
